@@ -1,13 +1,51 @@
 const express = require('express');
+const cors = require("cors");
 const db = require("./db")
 
 const API = express();
 const PORT = 9050;
 
 API.use(express.json());
+API.use(cors());
 
 API.get("/", (req,res)=>{
     res.status(200).json({message: "Hello World!"});
+})
+
+API.post("/login", async (req,res)=>{
+    const { email, password } = req.body;
+
+    // Check if fiedls are filled
+    if (!email || !password) {
+        return res.status(400).json({
+            error: "Both email and password fields are necessary."
+        });
+    }
+
+    // Search for user
+    const [rows] = await db.query(
+        "SELECT * FROM bd_users WHERE email = ?",
+        [email]
+    )
+
+    // If no user found
+    if (rows.length === 0) {
+        return res.status(404).json({
+            error: "User does not exist"
+        })
+    }
+
+    const user = rows[0];
+
+    // Compare password
+    if (user.userpass !== password) {
+        return res.status(401).json({
+            error: "Invalid Password"
+        });
+    }
+
+    // On success
+    return res.status(200).json({id: user.id, username: user.username, email: user.email, created_at: user.created_at});
 })
 
 // [[[[[[[[ USERS ]]]]]]]] \\
