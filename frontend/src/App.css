@@ -16,7 +16,7 @@ form {
 
 .login-container {
     background: rgb(37, 37, 37);
-    padding: 40px;
+    padding: 60px;
     width: 350px;
     border-radius: 15px;
     display: flex;
@@ -94,19 +94,4 @@ form {
 
 .logout-btn:hover {
     background: #7d0505;
-}
-
-.extra-links {
-    text-align: center;
-    margin-top: 20px;
-}
-
-.extra-links a {
-    text-decoration: none;
-    color: #4facfe;
-    font-size: 14px;
-}
-
-.extra-links a:hover {
-    text-decoration: underline;
 }
