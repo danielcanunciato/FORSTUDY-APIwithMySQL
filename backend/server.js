@@ -159,6 +159,103 @@ API.delete("/users/:id", async (req,res)=>{
     }
 })
 
+// [[[[[[[[ PRODUCTS ]]]]]]]] \\
+API.get("/products", async (req,res)=>{
+    try {
+        const [rows] = await db.query(
+            "SELECT * FROM bd_products"
+        )
+
+        res.status(200).json(rows);
+    } catch(err) {
+        res.status(500).json({error: err.message});
+    }
+})
+
+API.get("/products/:id", async (req, res)=>{
+    try {
+        const userID = req.params.id
+
+        const [users] = await db.query(
+            "SELECT * FROM bd_users WHERE id = ?",
+            [userID]
+        )
+
+        if (users.length === 0) {
+            return res.status(404).json({error: "User not found."});
+        }
+
+        const user = users[0]
+
+        const [rows] = await db.query(
+            `
+                SELECT
+                    prod.id,
+                    prod.name,
+                    prod.price,
+                    prod.quantity,
+                    prod.client_id,
+                    user.username
+                FROM bd_products prod INNER JOIN bd_users user ON prod.client_id = user.id WHERE prod.client_id = ?
+            `,
+            [userID]
+        );
+
+        if (rows.length > 0) {
+            return res.status(200).json(rows);
+        } else {
+            return res.status(404).json({error: "User has no products."})
+        }
+
+    } catch(err) {
+        res.status(500).json({error: err.message});
+    }
+})
+
+API.post("/products", async (req,res)=>{
+    try {
+        const { userID, name, price, quantity } = req.body;
+
+        if (!userID || !name || !price || !quantity) {
+            return res.status(400).json({error: "Missing Fields"});
+        }
+
+        const [users] = await db.query(
+            "SELECT * FROM bd_users WHERE id = ?",
+            [userID]
+        );
+
+        if (users.length === 0) { return res.status(404).json({error: "User not found."}) }
+
+        const [prods] = await db.query(
+            "SELECT * FROM bd_products WHERE name = ? AND client_id = ?",
+            [name, userID]
+        )
+
+        if (prods.length > 0) {
+            return res.status(409).json({error: "Product already exists for that user."})
+        }
+
+        const [result] = await db.query(
+            "INSERT INTO bd_products (name, price, quantity, client_id) VALUES (?, ?, ?, ?)",
+            [name, price, quantity, userID]
+        );
+
+        res.status(201).json({
+            message: "Item created successfully", 
+            data: {
+                name: name,
+                price: price,
+                quantity: quantity,
+                userID: userID
+            }
+        })
+
+    } catch(err) {
+        res.status(500).json({error: err.message});
+    }
+})
+
 // LISTEN \\
 API.listen(PORT, ()=>{
     console.log(`Running the API on http://localhost:${PORT}`)
